@@ -29,6 +29,8 @@ services:
       context: api/docker/develop/php-fpm
     volumes:
     - ./api:/app
+    environment:
+      APP_DEBUG: 1
 
   api-php-cli:
     build:
