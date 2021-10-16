@@ -10,9 +10,18 @@ http_response_code(500);
 
 require __DIR__ . './../vendor/autoload.php';
 
+$builder = new DI\ContainerBuilder();
+$builder->addDefinitions([
+    'config' => [
+        'debug' => (bool)getenv('APP_DEBUG')
+    ]
+]);
+
+$container = $builder->build();
+
 $app = AppFactory::create();
 
-$app->addErrorMiddleware(false, true, true);
+$app->addErrorMiddleware($container->get('config')['debug'], true, true);
 
 $app->get('/hello/{name}', function (Request $request, Response $response, array $args) {
     $name = $args['name'];
