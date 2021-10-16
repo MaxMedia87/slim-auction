@@ -1,6 +1,6 @@
 # Пример вложенных команд
 # В init происходит полная пересборка проекта
-init: docker-down-clear docker-down docker-pull docker-build docker-up
+init: docker-down-clear docker-down docker-pull docker-build docker-up api-init
 up: docker-up
 down: docker-down
 restart: down up
@@ -22,5 +22,7 @@ docker-pull:
 docker-build:
 	docker-compose build
 
-docker-composer:
-	docker-compose run --rm api-php-cli composer
+api-init: api-composer-install
+
+api-composer-install:
+	docker-compose run --rm api-php-cli composer install
