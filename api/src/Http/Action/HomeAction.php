@@ -3,17 +3,15 @@ declare(strict_types=1);
 
 namespace App\Http\Action;
 
-use Psr\Http\Message\ResponseInterface as Response;
-use Psr\Http\Message\ServerRequestInterface as Request;
+use App\Http\JsonResponse;
+use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\ServerRequestInterface;
+use Psr\Http\Server\RequestHandlerInterface;
 
-class HomeAction
+class HomeAction implements RequestHandlerInterface
 {
-    public function __invoke(Request $request, Response $response, $args)
+    public function handle(ServerRequestInterface $request): ResponseInterface
     {
-        $name = $args['name'];
-
-        $response->getBody()->write("Hello $name");
-
-        return $response;
+        return new JsonResponse(new \stdClass());
     }
 }
