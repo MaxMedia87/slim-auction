@@ -17,7 +17,8 @@
     "ext-json": "*",
     "php-di/php-di": "^6.0",
     "slim/psr7": "^1.0",
-    "slim/slim": "^4.9"
+    "slim/slim": "^4.9",
+    "symfony/console": "^5.3"
   },
   "require-dev": {
     "roave/security-advisories": "dev-master"
