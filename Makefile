@@ -4,6 +4,8 @@ init: docker-down-clear docker-down docker-pull docker-build docker-up api-init
 up: docker-up
 down: docker-down
 restart: down up
+lint: api-lint
+psalm: api-psalm
 
 docker-up:
 	docker-compose up -d
@@ -25,6 +27,9 @@ docker-build:
 api-lint:
 	docker-compose run --rm api-php-cli composer lint
 	docker-compose run --rm api-php-cli composer cs-check
+
+api-psalm:
+	docker-compose run --rm api-php-cli composer psalm
 
 api-init: api-composer-install
 
