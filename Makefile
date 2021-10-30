@@ -6,6 +6,7 @@ down: docker-down
 restart: down up
 lint: api-lint
 psalm: api-psalm
+test: api-test
 
 docker-up:
 	docker-compose up -d
@@ -23,6 +24,9 @@ docker-pull:
 
 docker-build:
 	docker-compose build
+
+api-test:
+	docker-compose run --rm api-php-cli composer test
 
 api-lint:
 	docker-compose run --rm api-php-cli composer lint
