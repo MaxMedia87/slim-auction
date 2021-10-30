@@ -8,7 +8,12 @@ $files = array_merge(
 );
 
 $configs = array_map(
-    function ($file) {
+    function (string $file): array {
+        /**
+         * @var array
+         * @noinspection PhpIncludeInspection
+         * @psalm-suppress UnresolvableInclude
+         */
         return require $file;
     },
     $files
