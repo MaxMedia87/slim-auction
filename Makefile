@@ -22,6 +22,9 @@ docker-pull:
 docker-build:
 	docker-compose build
 
+api-lint:
+	docker-compose run --rm api-php-cli composer lint
+
 api-init: api-composer-install
 
 api-composer-install:
