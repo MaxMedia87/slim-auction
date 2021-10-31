@@ -11,11 +11,17 @@
         <directory name="bin" />
         <directory name="config" />
         <directory name="src" />
+        <directory name="tests" />
         <ignoreFiles>
             <directory name="vendor" />
         </ignoreFiles>
     </projectFiles>
     <issueHandlers>
+        <PropertyNotSetInConstructor>
+            <errorLevel type="suppress">
+                <directory name="tests"/>
+            </errorLevel>
+        </PropertyNotSetInConstructor>
         <LessSpecificReturnType errorLevel="info" />
     </issueHandlers>
 </psalm>
