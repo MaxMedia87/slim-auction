@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Test\Http;
+namespace Test\Unit\Http;
 
 use App\Http\JsonResponse;
 use Fig\Http\Message\StatusCodeInterface;
