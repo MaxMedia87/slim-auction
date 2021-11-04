@@ -8,6 +8,8 @@ lint: api-lint
 psalm: api-psalm
 test: api-test
 test-unit: api-test-unit
+test-unit-coverage: api-test-unit-coverage
+test-functional-coverage: api-test-functional-coverage
 test-functional: api-test-functional
 
 docker-up:
@@ -33,8 +35,14 @@ api-test:
 api-test-unit:
 	docker-compose run --rm api-php-cli composer test -- --testsuite=unit
 
+api-test-unit-coverage:
+	docker-compose run --rm api-php-cli composer test-coverage -- --testsuite=unit
+
 api-test-functional:
 	docker-compose run --rm api-php-cli composer test -- --testsuite=functional
+
+api-test-functional-coverage:
+	docker-compose run --rm api-php-cli composer test-coverage -- --testsuite=functional
 
 api-lint:
 	docker-compose run --rm api-php-cli composer lint

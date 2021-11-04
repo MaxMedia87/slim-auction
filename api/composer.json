@@ -43,6 +43,7 @@
     "cs-fix": "phpcbf",
     "lint": "phplint",
     "test": "phpunit --colors=always",
+    "test-coverage": "phpunit --colors=always --coverage-html var/coverage",
     "app": "php bin/app.php --ansi"
   }
 }
