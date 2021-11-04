@@ -1,9 +1,16 @@
 # Пример вложенных команд
 # В init происходит полная пересборка проекта
-init: docker-down-clear docker-down docker-pull docker-build docker-up
+init: docker-down-clear docker-down docker-pull docker-build docker-up api-clear api-init
 up: docker-up
 down: docker-down
 restart: down up
+lint: api-lint
+psalm: api-psalm
+test: api-test
+test-unit: api-test-unit
+test-unit-coverage: api-test-unit-coverage
+test-functional-coverage: api-test-functional-coverage
+test-functional: api-test-functional
 
 docker-up:
 	docker-compose up -d
@@ -22,5 +29,35 @@ docker-pull:
 docker-build:
 	docker-compose build
 
-docker-composer:
-	docker-compose run --rm api-php-cli composer
+api-clear:
+	docker run --rm -v ${PWD}/api:/app -w /app alpine sh -c 'rm -rf var/*'
+
+api-init: api-composer-install api-permissions
+
+api-permissions:
+	docker run --rm -v ${PWD}/api:/app -w /app alpine chmod 777 var
+
+api-test:
+	docker-compose run --rm api-php-cli composer test
+
+api-test-unit:
+	docker-compose run --rm api-php-cli composer test -- --testsuite=unit
+
+api-test-unit-coverage:
+	docker-compose run --rm api-php-cli composer test-coverage -- --testsuite=unit
+
+api-test-functional:
+	docker-compose run --rm api-php-cli composer test -- --testsuite=functional
+
+api-test-functional-coverage:
+	docker-compose run --rm api-php-cli composer test-coverage -- --testsuite=functional
+
+api-lint:
+	docker-compose run --rm api-php-cli composer lint
+	docker-compose run --rm api-php-cli composer cs-check
+
+api-psalm:
+	docker-compose run --rm api-php-cli composer psalm
+
+api-composer-install:
+	docker-compose run --rm api-php-cli composer install
