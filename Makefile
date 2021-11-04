@@ -1,6 +1,6 @@
 # Пример вложенных команд
 # В init происходит полная пересборка проекта
-init: docker-down-clear docker-down docker-pull docker-build docker-up api-init
+init: docker-down-clear docker-down docker-pull docker-build docker-up api-clear api-init
 up: docker-up
 down: docker-down
 restart: down up
@@ -29,6 +29,14 @@ docker-pull:
 docker-build:
 	docker-compose build
 
+api-clear:
+	docker run --rm -v ${PWD}/api:/app -w /app alpine sh -c 'rm -rf var/*'
+
+api-init: api-composer-install api-permissions
+
+api-permissions:
+	docker run --rm -v ${PWD}/api:/app -w /app alpine chmod 777 var
+
 api-test:
 	docker-compose run --rm api-php-cli composer test
 
@@ -50,8 +58,6 @@ api-lint:
 
 api-psalm:
 	docker-compose run --rm api-php-cli composer psalm
-
-api-init: api-composer-install
 
 api-composer-install:
 	docker-compose run --rm api-php-cli composer install
