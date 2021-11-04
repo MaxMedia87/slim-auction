@@ -6,5 +6,5 @@ use App\Http\Action\HomeAction;
 use Slim\App;
 
 return static function (App $app): void {
-    $app->get('/hello/{name}', HomeAction::class);
+    $app->get('/', HomeAction::class);
 };
