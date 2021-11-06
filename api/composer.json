@@ -20,7 +20,8 @@
     "slim/psr7": "^1.0",
     "slim/slim": "^4.9",
     "symfony/console": "^5.3",
-    "webmozart/assert": "^1.10"
+    "webmozart/assert": "^1.10",
+    "ext-http": "*"
   },
   "require-dev": {
     "overtrue/phplint": "^2.0",
