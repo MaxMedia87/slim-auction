@@ -9,4 +9,6 @@ interface UserRepositoryInterface
     public function add(User $user): void;
 
     public function hasByEmail(Email $email): bool;
+
+    public function findByConfirmToken(string $token): ?User;
 }

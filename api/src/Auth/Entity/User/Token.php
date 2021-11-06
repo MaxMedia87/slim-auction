@@ -33,4 +33,25 @@ class Token
     {
         return $this->expires;
     }
+
+    public function validate(string $value, DateTimeImmutable $expires): void
+    {
+        if (false === $this->isEqualTo($value)) {
+            throw new \DomainException('Токен невалидный.');
+        }
+
+        if (true === $this->isExpiredTo($expires)) {
+            throw new \DomainException('Время действия токена истекло.');
+        }
+    }
+
+    private function isEqualTo(string $value): bool
+    {
+        return $this->value === $value;
+    }
+
+    public function isExpiredTo(DateTimeImmutable $date): bool
+    {
+        return $this->expires <= $date;
+    }
 }
