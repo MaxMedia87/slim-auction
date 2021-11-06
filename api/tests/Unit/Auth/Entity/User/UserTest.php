@@ -6,6 +6,7 @@ namespace Test\Unit\Auth\Entity\User;
 
 use App\Auth\Entity\User\Email;
 use App\Auth\Entity\User\Id;
+use App\Auth\Entity\User\Status;
 use App\Auth\Entity\User\Token;
 use App\Auth\Entity\User\User;
 use App\Auth\Service\PasswordHashGenerator;
@@ -44,6 +45,9 @@ class UserTest extends TestCase
         } else {
             self::assertNull($joinConfirmToken);
         }
+
+        self::assertTrue($user->isWait());
+        self::assertFalse($user->isActive());
     }
 
     /**
@@ -68,6 +72,50 @@ class UserTest extends TestCase
             new Email('test@mail.ru'),
             $hashGenerator->hash('pass'),
             null
+        ];
+    }
+
+    /**
+     * @param string $token
+     * @param DateTimeImmutable $newDate
+     * @dataProvider confirmDataProvider
+     */
+    public function testConfirm(
+        string $token,
+        DateTimeImmutable $newDate
+    ): void {
+        $hashGenerator = new PasswordHashGenerator(16);
+        $tokenDate = new DateTimeImmutable('+1 day');
+
+        $user = new User(
+            Id::generate(),
+            new DateTimeImmutable(),
+            new Email('test@mail.ru'),
+            $hashGenerator->hash('pass'),
+            new Token('8b979a49-045e-4af0-8fd5-d50cbf7cf705', $tokenDate)
+        );
+
+        self::assertTrue($user->isWait());
+        self::assertFalse($user->isActive());
+
+        $user->confirmJoin($token, $newDate);
+
+        self::assertFalse($user->isWait());
+        self::assertTrue($user->isActive());
+    }
+
+    /**
+     * @return \Iterator<array>
+     */
+    public function confirmDataProvider(): \Iterator
+    {
+        $date = new DateTimeImmutable();
+        $value = '8b979a49-045e-4af0-8fd5-d50cbf7cf705';
+
+        $token = new Token($value, $date->modify('-1 day'));
+        yield [
+            $token->value(),
+            $token->expires()
         ];
     }
 }
