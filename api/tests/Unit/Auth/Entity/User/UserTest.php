@@ -6,10 +6,10 @@ namespace Test\Unit\Auth\Entity\User;
 
 use App\Auth\Entity\User\Email;
 use App\Auth\Entity\User\Id;
-use App\Auth\Entity\User\Status;
 use App\Auth\Entity\User\Token;
 use App\Auth\Entity\User\User;
 use App\Auth\Service\PasswordHashGenerator;
+use App\Auth\Service\TokenGenerator;
 use DateTimeImmutable;
 use PHPUnit\Framework\TestCase;
 
@@ -117,5 +117,27 @@ class UserTest extends TestCase
             $token->value(),
             $token->expires()
         ];
+    }
+
+    public function testExceptionIfNoConfirmationIsRequired(): void
+    {
+        $hashGenerator = new PasswordHashGenerator(16);
+        $tokenGenerator = new TokenGenerator(new \DateInterval('PT1H'));
+        $token = $tokenGenerator->generate(new DateTimeImmutable('+1 day'));
+
+        $user = new User(
+            Id::generate(),
+            new DateTimeImmutable(),
+            new Email('test@mail.ru'),
+            $hashGenerator->hash('pass'),
+            $token
+        );
+
+        $user->confirmJoin($token->value(), new DateTimeImmutable());
+
+        $this->expectException(\DomainException::class);
+        $this->expectExceptionMessage('Подтверждение не требуется.');
+
+        $user->confirmJoin($token->value(), new DateTimeImmutable());
     }
 }
