@@ -33,9 +33,7 @@ class Handler
 
     public function handle(Command $command): void
     {
-        $email = new Email($command->email);
-
-        if (true === $this->userRepository->hasByEmail($email)) {
+        if (true === $this->userRepository->hasByEmail($command->email())) {
             throw new \DomainException('Пользователь уже существует с таким e-mail адресом');
         }
 
@@ -45,11 +43,11 @@ class Handler
         new User(
             Id::generate(),
             $date,
-            $email,
-            $this->hashGenerator->hash($command->password),
+            $command->email(),
+            $this->hashGenerator->hash($command->password()),
             $token
         );
 
-        $this->sender->send($email, $token);
+        $this->sender->send($command->email(), $token);
     }
 }

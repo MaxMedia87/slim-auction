@@ -17,7 +17,7 @@ class Handler
 
     public function handle(Command $command): void
     {
-        $user = $this->userRepository->findByConfirmToken($command->token);
+        $user = $this->userRepository->findByConfirmToken($command->token()->value());
 
         if (null === $user) {
             throw new \DomainException('Некорректный токен.');
