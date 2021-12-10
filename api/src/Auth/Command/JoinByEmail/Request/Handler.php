@@ -40,13 +40,15 @@ class Handler
         $date = new \DateTimeImmutable();
         $token = $this->tokenGenerator->generate($date);
 
-        new User(
+        $user = new User(
             Id::generate(),
             $date,
             $command->email(),
             $this->hashGenerator->hash($command->password()),
             $token
         );
+
+        $this->userRepository->add($user);
 
         $this->sender->send($command->email(), $token);
     }
