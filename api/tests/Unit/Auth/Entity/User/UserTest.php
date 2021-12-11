@@ -6,6 +6,7 @@ namespace Test\Unit\Auth\Entity\User;
 
 use App\Auth\Entity\User\Email;
 use App\Auth\Entity\User\Id;
+use App\Auth\Entity\User\Status;
 use App\Auth\Entity\User\Token;
 use App\Auth\Entity\User\User;
 use App\Auth\Service\PasswordHashGenerator;
@@ -19,8 +20,7 @@ class UserTest extends TestCase
      * @param Id $id
      * @param DateTimeImmutable $date
      * @param Email $email
-     * @param string $passwordHash
-     * @param Token|null $joinConfirmToken
+     * @param Status $status
      * @dataProvider validCreationDataProvider
      *
      * @psalm-suppress PossiblyNullReference
@@ -30,22 +30,13 @@ class UserTest extends TestCase
         Id $id,
         DateTimeImmutable $date,
         Email $email,
-        string $passwordHash,
-        ?Token $joinConfirmToken
+        Status $status
     ): void {
-        $user = new User($id, $date, $email, $passwordHash, $joinConfirmToken);
+        $user = new User($id, $date, $email, $status);
 
         self::assertEquals($id->value(), $user->id()->value());
         self::assertInstanceOf(DateTimeImmutable::class, $user->date());
         self::assertEquals($email->value(), $user->email()->value());
-        self::assertEquals($passwordHash, $user->passwordHash());
-
-        if (null !== $joinConfirmToken) {
-            self::assertEquals($joinConfirmToken->value(), $user->joinConfirmToken()->value());
-        } else {
-            self::assertNull($joinConfirmToken);
-        }
-
         self::assertTrue($user->isWait());
         self::assertFalse($user->isActive());
     }
@@ -55,7 +46,55 @@ class UserTest extends TestCase
      */
     public function validCreationDataProvider(): \Iterator
     {
+        $date = new DateTimeImmutable();
+
+        yield [
+            Id::generate(),
+            $date,
+            new Email('test@mail.ru'),
+            Status::wait()
+        ];
+
+        yield [
+            Id::generate(),
+            $date,
+            new Email('test@mail.ru'),
+            Status::wait()
+        ];
+    }
+
+    /**
+     * @param Id $id
+     * @param DateTimeImmutable $date
+     * @param Email $email
+     * @param string $passwordHash
+     * @param Token $token
+     * @dataProvider validRequestJoinByEmailDataProvider
+     */
+    public function testRequestJoinByEmail(
+        Id $id,
+        DateTimeImmutable $date,
+        Email $email,
+        string $passwordHash,
+        Token $token
+    ): void {
+        $user = User::requestJoinByEmail($id, $date, $email, $passwordHash, $token);
+
+        self::assertEquals($id->value(), $user->id()->value());
+        self::assertInstanceOf(DateTimeImmutable::class, $user->date());
+        self::assertEquals($email->value(), $user->email()->value());
+        self::assertTrue($user->isWait());
+        self::assertFalse($user->isActive());
+    }
+
+    /**
+     * @return \Iterator<array>
+     */
+    public function validRequestJoinByEmailDataProvider(): \Iterator
+    {
         $hashGenerator = new PasswordHashGenerator(16);
+        $tokenGenerator = new TokenGenerator(new \DateInterval('PT1H'));
+        $token = $tokenGenerator->generate(new DateTimeImmutable('+1 day'));
         $date = new DateTimeImmutable();
 
         yield [
@@ -63,15 +102,7 @@ class UserTest extends TestCase
             $date,
             new Email('test@mail.ru'),
             $hashGenerator->hash('pass'),
-            new Token('8b979a49-045e-4af0-8fd5-d50cbf7cf705', $date)
-        ];
-
-        yield [
-            Id::generate(),
-            $date,
-            new Email('test@mail.ru'),
-            $hashGenerator->hash('pass'),
-            null
+            $token
         ];
     }
 
@@ -85,14 +116,13 @@ class UserTest extends TestCase
         DateTimeImmutable $newDate
     ): void {
         $hashGenerator = new PasswordHashGenerator(16);
-        $tokenDate = new DateTimeImmutable('+1 day');
 
-        $user = new User(
+        $user = User::requestJoinByEmail(
             Id::generate(),
             new DateTimeImmutable(),
             new Email('test@mail.ru'),
             $hashGenerator->hash('pass'),
-            new Token('8b979a49-045e-4af0-8fd5-d50cbf7cf705', $tokenDate)
+            new Token($token, new DateTimeImmutable())
         );
 
         self::assertTrue($user->isWait());
@@ -111,8 +141,8 @@ class UserTest extends TestCase
     {
         $date = new DateTimeImmutable();
         $value = '8b979a49-045e-4af0-8fd5-d50cbf7cf705';
-
         $token = new Token($value, $date->modify('-1 day'));
+
         yield [
             $token->value(),
             $token->expires()
@@ -125,7 +155,7 @@ class UserTest extends TestCase
         $tokenGenerator = new TokenGenerator(new \DateInterval('PT1H'));
         $token = $tokenGenerator->generate(new DateTimeImmutable('+1 day'));
 
-        $user = new User(
+        $user = User::requestJoinByEmail(
             Id::generate(),
             new DateTimeImmutable(),
             new Email('test@mail.ru'),
