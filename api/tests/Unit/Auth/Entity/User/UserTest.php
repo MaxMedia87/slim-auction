@@ -6,12 +6,14 @@ namespace Test\Unit\Auth\Entity\User;
 
 use App\Auth\Entity\User\Email;
 use App\Auth\Entity\User\Id;
+use App\Auth\Entity\User\NetworkIdentity;
 use App\Auth\Entity\User\Status;
 use App\Auth\Entity\User\Token;
 use App\Auth\Entity\User\User;
 use App\Auth\Service\PasswordHashGenerator;
 use App\Auth\Service\TokenGenerator;
 use DateTimeImmutable;
+use Iterator;
 use PHPUnit\Framework\TestCase;
 
 class UserTest extends TestCase
@@ -42,9 +44,9 @@ class UserTest extends TestCase
     }
 
     /**
-     * @return \Iterator<array>
+     * @return Iterator<array>
      */
-    public function validCreationDataProvider(): \Iterator
+    public function validCreationDataProvider(): Iterator
     {
         $date = new DateTimeImmutable();
 
@@ -88,9 +90,9 @@ class UserTest extends TestCase
     }
 
     /**
-     * @return \Iterator<array>
+     * @return Iterator<array>
      */
-    public function validRequestJoinByEmailDataProvider(): \Iterator
+    public function validRequestJoinByEmailDataProvider(): Iterator
     {
         $hashGenerator = new PasswordHashGenerator(16);
         $tokenGenerator = new TokenGenerator(new \DateInterval('PT1H'));
@@ -103,6 +105,42 @@ class UserTest extends TestCase
             new Email('test@mail.ru'),
             $hashGenerator->hash('pass'),
             $token
+        ];
+    }
+
+    /**
+     * @param Id $id
+     * @param DateTimeImmutable $date
+     * @param Email $email
+     * @param NetworkIdentity $networkIdentity
+     * @dataProvider validRequestJoinByNetworkDataProvider
+     */
+    public function testRequestJoinByNetwork(
+        Id $id,
+        DateTimeImmutable $date,
+        Email $email,
+        NetworkIdentity $networkIdentity
+    ): void {
+        $user = User::requestJoinByNetwork($id, $date, $email, $networkIdentity);
+
+        self::assertEquals($id->value(), $user->id()->value());
+        self::assertInstanceOf(DateTimeImmutable::class, $user->date());
+        self::assertEquals($email->value(), $user->email()->value());
+        self::assertFalse($user->isWait());
+        self::assertTrue($user->isActive());
+        self::assertCount(1, $user->networks());
+    }
+
+    /**
+     * @return Iterator<array>
+     */
+    public function validRequestJoinByNetworkDataProvider(): Iterator
+    {
+        yield [
+            Id::generate(),
+            new DateTimeImmutable(),
+            new Email('test@mail.ru'),
+            new NetworkIdentity('00001', 'vk')
         ];
     }
 
@@ -135,9 +173,9 @@ class UserTest extends TestCase
     }
 
     /**
-     * @return \Iterator<array>
+     * @return Iterator<array>
      */
-    public function confirmDataProvider(): \Iterator
+    public function confirmDataProvider(): Iterator
     {
         $date = new DateTimeImmutable();
         $value = '8b979a49-045e-4af0-8fd5-d50cbf7cf705';
