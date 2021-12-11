@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Auth\Entity\User;
 
+use ArrayObject;
 use DateTimeImmutable;
 
 class User
@@ -12,6 +13,7 @@ class User
     private DateTimeImmutable $date;
     private Email $email;
     private Status $status;
+    private ArrayObject $networks;
     private ?string $passwordHash = null;
     private ?Token $joinConfirmToken = null;
 
@@ -31,6 +33,19 @@ class User
         $this->date = $date;
         $this->email = $email;
         $this->status = $status;
+        $this->networks = new ArrayObject();
+    }
+
+    public static function requestJoinByNetwork(
+        Id $id,
+        DateTimeImmutable $date,
+        Email $email,
+        NetworkIdentity $networkIdentity
+    ): self {
+        $user = new self($id, $date, $email, Status::active());
+        $user->networks->append($networkIdentity);
+
+        return $user;
     }
 
     public static function requestJoinByEmail(
@@ -91,5 +106,13 @@ class User
     public function passwordHash(): string
     {
         return $this->passwordHash;
+    }
+
+    /**
+     * @return NetworkIdentity[]
+     */
+    public function networks(): array
+    {
+        return $this->networks->getArrayCopy();
     }
 }
