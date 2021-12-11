@@ -11,30 +11,40 @@ class User
     private Id $id;
     private DateTimeImmutable $date;
     private Email $email;
-    private string $passwordHash;
     private Status $status;
-    private ?Token $joinConfirmToken;
+    private ?string $passwordHash = null;
+    private ?Token $joinConfirmToken = null;
 
     /**
      * @param Id $id
      * @param DateTimeImmutable $date
      * @param Email $email
-     * @param string $passwordHash
-     * @param null|Token $joinConfirmToken
+     * @param Status $status
      */
     public function __construct(
         Id $id,
         DateTimeImmutable $date,
         Email $email,
-        string $passwordHash,
-        ?Token $joinConfirmToken
+        Status $status
     ) {
         $this->id = $id;
         $this->date = $date;
         $this->email = $email;
-        $this->passwordHash = $passwordHash;
-        $this->status = Status::wait();
-        $this->joinConfirmToken = $joinConfirmToken;
+        $this->status = $status;
+    }
+
+    public static function requestJoinByEmail(
+        Id $id,
+        DateTimeImmutable $date,
+        Email $email,
+        string $passwordHash,
+        Token $token
+    ): self {
+        $user = new self($id, $date, $email, Status::wait());
+        $user->passwordHash = $passwordHash;
+        $user->joinConfirmToken = $token;
+
+        return $user;
     }
 
     public function confirmJoin(string $token, DateTimeImmutable $date): void
