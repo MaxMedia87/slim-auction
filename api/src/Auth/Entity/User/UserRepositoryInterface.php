@@ -16,6 +16,8 @@ interface UserRepositoryInterface
 
     public function findByNetwork(NetworkIdentity $identity): ?User;
 
+    public function findByPasswordResetToken(string $token): ?User;
+
     /**
      * @param Id $id
      *
@@ -23,4 +25,12 @@ interface UserRepositoryInterface
      * @throws DomainException
      */
     public function get(Id $id): User;
+
+    /**
+     * @param Email $email
+     *
+     * @return User
+     * @throws DomainException
+     */
+    public function getByEmail(Email $email): User;
 }

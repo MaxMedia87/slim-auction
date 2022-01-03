@@ -15,6 +15,7 @@ use App\Auth\Service\TokenGenerator;
 use DateTimeImmutable;
 use Iterator;
 use PHPUnit\Framework\TestCase;
+use Ramsey\Uuid\Uuid;
 
 class UserTest extends TestCase
 {
@@ -253,5 +254,133 @@ class UserTest extends TestCase
         $this->expectException(\DomainException::class);
 
         $user->attachNetwork($network);
+    }
+
+    public function testRequestPasswordReset(): void
+    {
+        $hashGenerator = new PasswordHashGenerator(16);
+        $tokenGenerator = new TokenGenerator(new \DateInterval('PT1H'));
+        $token = $tokenGenerator->generate(new DateTimeImmutable('+1 day'));
+
+        $user = User::requestJoinByEmail(
+            Id::generate(),
+            new DateTimeImmutable(),
+            new Email('test@mail.ru'),
+            $hashGenerator->hash('pass'),
+            $token
+        );
+
+        $user->confirmJoin($token->value(), new DateTimeImmutable());
+
+        $now = new DateTimeImmutable();
+        $newToken = new Token(Uuid::uuid4()->toString(), $now->modify('+1 hour'));
+
+        $user->requestPasswordReset($newToken, $now);
+
+        self::assertNotNull($user->passwordResetToken());
+        self::assertEquals($newToken, $user->passwordResetToken());
+    }
+
+    public function testExceptionIfResetRequestIsSent(): void
+    {
+        $hashGenerator = new PasswordHashGenerator(16);
+        $tokenGenerator = new TokenGenerator(new \DateInterval('PT1H'));
+        $token = $tokenGenerator->generate(new DateTimeImmutable('+1 day'));
+
+        $user = User::requestJoinByEmail(
+            Id::generate(),
+            new DateTimeImmutable(),
+            new Email('test@mail.ru'),
+            $hashGenerator->hash('pass'),
+            $token
+        );
+
+        $user->confirmJoin($token->value(), new DateTimeImmutable());
+
+        $now = new DateTimeImmutable();
+        $newToken = new Token(Uuid::uuid4()->toString(), $now->modify('+1 hour'));
+
+        $user->requestPasswordReset($newToken, $now);
+
+        $this->expectException(\DomainException::class);
+        $this->expectExceptionMessage('Запрос на сброс пароля уже отправлен.');
+
+        $user->requestPasswordReset($newToken, $now);
+    }
+
+    public function testExceptionWhenResettingPasswordIfUserIsInactive(): void
+    {
+        $hashGenerator = new PasswordHashGenerator(16);
+        $tokenGenerator = new TokenGenerator(new \DateInterval('PT1H'));
+        $token = $tokenGenerator->generate(new DateTimeImmutable('+1 day'));
+
+        $user = User::requestJoinByEmail(
+            Id::generate(),
+            new DateTimeImmutable(),
+            new Email('test@mail.ru'),
+            $hashGenerator->hash('pass'),
+            $token
+        );
+
+        $this->expectException(\DomainException::class);
+        $this->expectExceptionMessage('Пользователь не активен.');
+
+        $now = new DateTimeImmutable();
+        $newToken = new Token(Uuid::uuid4()->toString(), $now->modify('+1 hour'));
+
+        $user->requestPasswordReset($newToken, $now);
+    }
+
+    public function testResetPassword(): void
+    {
+        $hashGenerator = new PasswordHashGenerator(16);
+        $tokenGenerator = new TokenGenerator(new \DateInterval('PT1H'));
+        $token = $tokenGenerator->generate(new DateTimeImmutable('+1 day'));
+
+        $user = User::requestJoinByEmail(
+            Id::generate(),
+            new DateTimeImmutable(),
+            new Email('test@mail.ru'),
+            $hashGenerator->hash('pass'),
+            $token
+        );
+
+        $user->confirmJoin($token->value(), new DateTimeImmutable());
+
+        $now = new DateTimeImmutable();
+        $newToken = new Token(Uuid::uuid4()->toString(), $now->modify('+1 hour'));
+        $hash = 'hash';
+
+        $user->requestPasswordReset($newToken, $now);
+        $user->resetPassword($newToken->value(), $now, $hash);
+
+        self::assertNull($user->passwordResetToken());
+        self::assertEquals($hash, $user->passwordHash());
+    }
+
+    public function testExceptionIfNoPasswordResetRequestIsSent(): void
+    {
+        $hashGenerator = new PasswordHashGenerator(16);
+        $tokenGenerator = new TokenGenerator(new \DateInterval('PT1H'));
+        $token = $tokenGenerator->generate(new DateTimeImmutable('+1 day'));
+
+        $user = User::requestJoinByEmail(
+            Id::generate(),
+            new DateTimeImmutable(),
+            new Email('test@mail.ru'),
+            $hashGenerator->hash('pass'),
+            $token
+        );
+
+        $user->confirmJoin($token->value(), new DateTimeImmutable());
+
+        $now = new DateTimeImmutable();
+        $newToken = new Token(Uuid::uuid4()->toString(), $now->modify('+1 hour'));
+        $hash = 'hash';
+
+        $this->expectException(\DomainException::class);
+        $this->expectExceptionMessage('Не отправлен запрос на сброс пароля.');
+
+        $user->resetPassword($newToken->value(), $now, $hash);
     }
 }

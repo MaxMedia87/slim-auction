@@ -16,6 +16,7 @@ class User
     private ArrayObject $networks;
     private ?string $passwordHash = null;
     private ?Token $joinConfirmToken = null;
+    private ?Token $passwordResetToken = null;
 
     /**
      * @param Id $id
@@ -60,6 +61,35 @@ class User
         $user->joinConfirmToken = $token;
 
         return $user;
+    }
+
+    public function requestPasswordReset(Token $token, DateTimeImmutable $date): void
+    {
+        if (false === $this->isActive()) {
+            throw new \DomainException('Пользователь не активен.');
+        }
+
+        if (null !== $this->passwordResetToken() && false === $this->passwordResetToken->isExpiredTo($date)) {
+            throw new \DomainException('Запрос на сброс пароля уже отправлен.');
+        }
+
+        $this->passwordResetToken = $token;
+    }
+
+    public function passwordResetToken(): ?Token
+    {
+        return $this->passwordResetToken;
+    }
+
+    public function resetPassword(string $token, DateTimeImmutable $date, string $hash)
+    {
+        if (null === $this->passwordResetToken()) {
+            throw new \DomainException('Не отправлен запрос на сброс пароля.');
+        }
+
+        $this->passwordResetToken()->validate($token, $date);
+        $this->passwordResetToken = null;
+        $this->passwordHash = $hash;
     }
 
     public function confirmJoin(string $token, DateTimeImmutable $date): void
