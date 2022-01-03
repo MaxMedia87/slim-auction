@@ -40,7 +40,7 @@ class Handler
         $date = new \DateTimeImmutable();
         $token = $this->tokenGenerator->generate($date);
 
-        $user = new User(
+        $user = User::requestJoinByEmail(
             Id::generate(),
             $date,
             $command->email(),
