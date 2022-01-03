@@ -103,7 +103,7 @@ class User
         return $this->joinConfirmToken;
     }
 
-    public function passwordHash(): string
+    public function passwordHash(): ?string
     {
         return $this->passwordHash;
     }
@@ -114,5 +114,16 @@ class User
     public function networks(): array
     {
         return $this->networks->getArrayCopy();
+    }
+
+    public function attachNetwork(NetworkIdentity $networkIdentity): void
+    {
+        foreach ($this->networks() as $network) {
+            if (true === $network->isEqualTo($networkIdentity)) {
+                throw new \DomainException('Соц. сеть уже привязана к аккаунту пользователя');
+            }
+        }
+
+        $this->networks->append($networkIdentity);
     }
 }

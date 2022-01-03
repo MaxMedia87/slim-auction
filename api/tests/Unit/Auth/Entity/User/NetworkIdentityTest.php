@@ -65,7 +65,7 @@ class NetworkIdentityTest extends TestCase
      * @param string $network
      * @param string $exceptionClass
      * @param string $exceptionMessage
-     *
+     * @psalm-param  class-string<\Throwable> $exceptionClass
      * @dataProvider invalidNetworkDataProvider
      */
     public function testItCanThrowExceptionIfDataIsEmpty(

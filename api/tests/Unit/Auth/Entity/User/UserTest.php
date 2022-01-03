@@ -208,4 +208,50 @@ class UserTest extends TestCase
 
         $user->confirmJoin($token->value(), new DateTimeImmutable());
     }
+
+    /**
+     * @param NetworkIdentity $networkIdentity
+     * @dataProvider validNetworkDataProvider
+     */
+    public function testAttachNetwork(
+        NetworkIdentity $networkIdentity
+    ): void {
+        $user = User::requestJoinByNetwork(
+            Id::generate(),
+            new DateTimeImmutable(),
+            new Email('test@mail.ru'),
+            new NetworkIdentity('00121', 'vk')
+        );
+
+        $user->attachNetwork($networkIdentity);
+
+        self::assertCount(2, $user->networks());
+        self::assertEquals('vk', $user->networks()[0]->network());
+        self::assertEquals('fb', $user->networks()[1]->network());
+    }
+
+    /**
+     * @return Iterator<array>
+     */
+    public function validNetworkDataProvider(): Iterator
+    {
+        yield [new NetworkIdentity('00001', 'fb')];
+    }
+
+    public function testExceptionIfTheSocialNetworkExists(): void
+    {
+        $network = new NetworkIdentity('00121', 'vk');
+
+        $user = User::requestJoinByNetwork(
+            Id::generate(),
+            new DateTimeImmutable(),
+            new Email('test@mail.ru'),
+            $network
+        );
+
+        $this->expectExceptionMessage('Соц. сеть уже привязана к аккаунту пользователя');
+        $this->expectException(\DomainException::class);
+
+        $user->attachNetwork($network);
+    }
 }
