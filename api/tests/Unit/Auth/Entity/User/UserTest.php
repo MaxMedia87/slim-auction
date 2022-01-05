@@ -383,4 +383,75 @@ class UserTest extends TestCase
 
         $user->resetPassword($newToken->value(), $now, $hash);
     }
+
+    public function testChangePassword(): void
+    {
+        $hashGenerator = new PasswordHashGenerator(16);
+        $tokenGenerator = new TokenGenerator(new \DateInterval('PT1H'));
+        $token = $tokenGenerator->generate(new DateTimeImmutable('+1 day'));
+
+        $user = User::requestJoinByEmail(
+            Id::generate(),
+            new DateTimeImmutable(),
+            new Email('test@mail.ru'),
+            $hashGenerator->hash('pass'),
+            $token
+        );
+
+        $hashGenerator = $this->createMock(PasswordHashGenerator::class);
+        $hashGenerator
+            ->expects($this->once())
+            ->method('validate')
+            ->willReturn(true);
+
+        $hashGenerator
+            ->expects($this->once())
+            ->method('hash')
+            ->willReturn('newPassHash');
+
+        $user->changePassword('pass', 'newPass', $hashGenerator);
+
+        self::assertEquals('newPassHash', $user->passwordHash());
+    }
+
+    public function testExceptionIfTheUserDoesNotHavePassword(): void
+    {
+        $network = new NetworkIdentity('00121', 'vk');
+
+        $user = User::requestJoinByNetwork(
+            Id::generate(),
+            new DateTimeImmutable(),
+            new Email('test@mail.ru'),
+            $network
+        );
+
+        $hashGenerator = $this->createMock(PasswordHashGenerator::class);
+
+        $this->expectExceptionMessage('У пользователя нет пароля.');
+        $this->expectException(\DomainException::class);
+
+        $user->changePassword('pass', 'newPass', $hashGenerator);
+    }
+
+    public function testExceptionIfAnIncorrectPasswordIsEntered(): void
+    {
+        $hashGenerator = new PasswordHashGenerator(16);
+        $tokenGenerator = new TokenGenerator(new \DateInterval('PT1H'));
+        $token = $tokenGenerator->generate(new DateTimeImmutable('+1 day'));
+
+        $user = User::requestJoinByEmail(
+            Id::generate(),
+            new DateTimeImmutable(),
+            new Email('test@mail.ru'),
+            $hashGenerator->hash('pass'),
+            $token
+        );
+
+        $hashGenerator = $this->createMock(PasswordHashGenerator::class);
+
+        $this->expectExceptionMessage('Вы ввели неверный пароль.');
+        $this->expectException(\DomainException::class);
+
+        $user->changePassword('pass', 'newPass', $hashGenerator);
+    }
 }

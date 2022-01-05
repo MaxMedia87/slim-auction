@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Auth\Entity\User;
 
+use App\Auth\Service\PasswordHashGenerator;
 use ArrayObject;
 use DateTimeImmutable;
 
@@ -81,7 +82,7 @@ class User
         return $this->passwordResetToken;
     }
 
-    public function resetPassword(string $token, DateTimeImmutable $date, string $hash)
+    public function resetPassword(string $token, DateTimeImmutable $date, string $hash): void
     {
         if (null === $this->passwordResetToken()) {
             throw new \DomainException('Не отправлен запрос на сброс пароля.');
@@ -90,6 +91,22 @@ class User
         $this->passwordResetToken()->validate($token, $date);
         $this->passwordResetToken = null;
         $this->passwordHash = $hash;
+    }
+
+    public function changePassword(
+        string $currentPassword,
+        string $newPassword,
+        PasswordHashGenerator $passwordHashGenerator
+    ): void {
+        if (null === $this->passwordHash()) {
+            throw new \DomainException('У пользователя нет пароля.');
+        }
+
+        if (false === $passwordHashGenerator->validate($currentPassword, $this->passwordHash())) {
+            throw new \DomainException('Вы ввели неверный пароль.');
+        }
+
+        $this->passwordHash = $passwordHashGenerator->hash($newPassword);
     }
 
     public function confirmJoin(string $token, DateTimeImmutable $date): void
