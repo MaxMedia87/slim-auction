@@ -18,6 +18,8 @@ interface UserRepositoryInterface
 
     public function findByPasswordResetToken(string $token): ?User;
 
+    public function findByNewEmailToken(string $token): ?User;
+
     /**
      * @param Id $id
      *

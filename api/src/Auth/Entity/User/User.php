@@ -19,7 +19,7 @@ class User
     private ?Token $joinConfirmToken = null;
     private ?Token $passwordResetToken = null;
     private ?Token $newEmailToken = null;
-    private Email $newEmail;
+    private ?Email $newEmail = null;
 
     /**
      * @param Id $id
@@ -129,6 +129,18 @@ class User
         $this->newEmailToken = $token;
     }
 
+    public function confirmEmailChanging(string $token, DateTimeImmutable $date): void
+    {
+        if (null === $this->newEmail() || null === $this->newEmailToken()) {
+            throw new \DomainException('Не отправлен запрос на смену Email.');
+        }
+
+        $this->newEmailToken()->validate($token, $date);
+        $this->email = $this->newEmail();
+        $this->newEmailToken = null;
+        $this->newEmail = null;
+    }
+
     public function confirmJoin(string $token, DateTimeImmutable $date): void
     {
         if (null === $this->joinConfirmToken) {
@@ -188,7 +200,7 @@ class User
         return $this->newEmailToken;
     }
 
-    public function newEmail(): Email
+    public function newEmail(): ?Email
     {
         return $this->newEmail;
     }

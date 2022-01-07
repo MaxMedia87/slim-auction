@@ -560,4 +560,56 @@ class UserTest extends TestCase
         $newEmail = new Email('new-email2@mail.ru');
         $user->requestEmailChanging($newEmailToken, $newDate, $newEmail);
     }
+
+    public function testConfirmEmailChanging(): void
+    {
+        $hashGenerator = new PasswordHashGenerator(16);
+        $tokenGenerator = new TokenGenerator(new \DateInterval('PT1H'));
+        $token = $tokenGenerator->generate(new DateTimeImmutable('+1 day'));
+
+        $user = User::requestJoinByEmail(
+            Id::generate(),
+            new DateTimeImmutable(),
+            new Email('test@mail.ru'),
+            $hashGenerator->hash('pass'),
+            $token
+        );
+
+        $user->confirmJoin($token->value(), new DateTimeImmutable());
+
+        $newDate = new DateTimeImmutable();
+        $newEmailToken = $tokenGenerator->generate($newDate);
+        $newEmail = new Email('new-email@mail.ru');
+
+        $user->requestEmailChanging($newEmailToken, $newDate, $newEmail);
+        $user->confirmEmailChanging($newEmailToken->value(), new DateTimeImmutable());
+
+        self::assertNull($user->newEmailToken());
+        self::assertNull($user->newEmail());
+        self::assertEquals($newEmail->value(), $user->email()->value());
+    }
+
+    public function testExceptionIfChangeTheEmailRequestIsNotSent(): void
+    {
+        $hashGenerator = new PasswordHashGenerator(16);
+        $tokenGenerator = new TokenGenerator(new \DateInterval('PT1H'));
+        $token = $tokenGenerator->generate(new DateTimeImmutable('+1 day'));
+
+        $user = User::requestJoinByEmail(
+            Id::generate(),
+            new DateTimeImmutable(),
+            new Email('test@mail.ru'),
+            $hashGenerator->hash('pass'),
+            $token
+        );
+
+        $user->confirmJoin($token->value(), new DateTimeImmutable());
+
+        $newEmailToken = $tokenGenerator->generate(new DateTimeImmutable());
+
+        $this->expectException(\DomainException::class);
+        $this->expectExceptionMessage('Не отправлен запрос на смену Email.');
+
+        $user->confirmEmailChanging($newEmailToken->value(), new DateTimeImmutable());
+    }
 }
