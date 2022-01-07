@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Auth\Command\JoinByEmail\Confirm;
 
 use App\Auth\Entity\User\UserRepositoryInterface;
+use DateTimeImmutable;
 
 class Handler
 {
@@ -22,5 +23,7 @@ class Handler
         if (null === $user) {
             throw new \DomainException('Некорректный токен.');
         }
+
+        $user->confirmJoin($command->token()->value(), new DateTimeImmutable());
     }
 }
