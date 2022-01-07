@@ -18,6 +18,8 @@ class User
     private ?string $passwordHash = null;
     private ?Token $joinConfirmToken = null;
     private ?Token $passwordResetToken = null;
+    private ?Token $newEmailToken = null;
+    private Email $newEmail;
 
     /**
      * @param Id $id
@@ -109,6 +111,24 @@ class User
         $this->passwordHash = $passwordHashGenerator->hash($newPassword);
     }
 
+    public function requestEmailChanging(Token $token, DateTimeImmutable $date, Email $email): void
+    {
+        if (false === $this->isActive()) {
+            throw new \DomainException('Пользователь не активен.');
+        }
+
+        if (true === $this->email()->isEqualTo($email)) {
+            throw new \DomainException('Е-mail совпадает с текущим.');
+        }
+
+        if (null !== $this->newEmailToken() && false === $this->newEmailToken()->isExpiredTo($date)) {
+            throw new \DomainException('Изменение E-mail уже запрошено.');
+        }
+
+        $this->newEmail = $email;
+        $this->newEmailToken = $token;
+    }
+
     public function confirmJoin(string $token, DateTimeImmutable $date): void
     {
         if (null === $this->joinConfirmToken) {
@@ -161,6 +181,16 @@ class User
     public function networks(): array
     {
         return $this->networks->getArrayCopy();
+    }
+
+    public function newEmailToken(): ?Token
+    {
+        return $this->newEmailToken;
+    }
+
+    public function newEmail(): Email
+    {
+        return $this->newEmail;
     }
 
     public function attachNetwork(NetworkIdentity $networkIdentity): void

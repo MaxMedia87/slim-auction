@@ -454,4 +454,110 @@ class UserTest extends TestCase
 
         $user->changePassword('pass', 'newPass', $hashGenerator);
     }
+
+    public function testRequestEmailChanging(): void
+    {
+        $hashGenerator = new PasswordHashGenerator(16);
+        $tokenGenerator = new TokenGenerator(new \DateInterval('PT1H'));
+        $token = $tokenGenerator->generate(new DateTimeImmutable('+1 day'));
+
+        $user = User::requestJoinByEmail(
+            Id::generate(),
+            new DateTimeImmutable(),
+            new Email('test@mail.ru'),
+            $hashGenerator->hash('pass'),
+            $token
+        );
+
+        $user->confirmJoin($token->value(), new DateTimeImmutable());
+
+        $newDate = new DateTimeImmutable();
+        $newEmailToken = $tokenGenerator->generate($newDate);
+        $newEmail = new Email('new-email@mail.ru');
+
+        $user->requestEmailChanging($newEmailToken, $newDate, $newEmail);
+
+        self::assertEquals($newEmail->value(), $user->newEmail()->value());
+        self::assertEquals('test@mail.ru', $user->email()->value());
+    }
+
+    public function testExceptionWhenRequestingChangeEmailIfUserIsNotActive(): void
+    {
+        $hashGenerator = new PasswordHashGenerator(16);
+        $tokenGenerator = new TokenGenerator(new \DateInterval('PT1H'));
+        $token = $tokenGenerator->generate(new DateTimeImmutable('+1 day'));
+
+        $user = User::requestJoinByEmail(
+            Id::generate(),
+            new DateTimeImmutable(),
+            new Email('test@mail.ru'),
+            $hashGenerator->hash('pass'),
+            $token
+        );
+
+        $newDate = new DateTimeImmutable();
+        $newEmailToken = $tokenGenerator->generate($newDate);
+        $newEmail = new Email('new-email@mail.ru');
+
+        $this->expectException(\DomainException::class);
+        $this->expectExceptionMessage('Пользователь не активен.');
+
+        $user->requestEmailChanging($newEmailToken, $newDate, $newEmail);
+    }
+
+    public function testExceptionWhenRequestingChangeEmailIfEmailMatchesTheCurrentOne(): void
+    {
+        $hashGenerator = new PasswordHashGenerator(16);
+        $tokenGenerator = new TokenGenerator(new \DateInterval('PT1H'));
+        $token = $tokenGenerator->generate(new DateTimeImmutable('+1 day'));
+
+        $user = User::requestJoinByEmail(
+            Id::generate(),
+            new DateTimeImmutable(),
+            new Email('test@mail.ru'),
+            $hashGenerator->hash('pass'),
+            $token
+        );
+
+        $user->confirmJoin($token->value(), new DateTimeImmutable());
+
+        $newDate = new DateTimeImmutable();
+        $newEmailToken = $tokenGenerator->generate($newDate);
+        $newEmail = new Email('test@mail.ru');
+
+        $this->expectException(\DomainException::class);
+        $this->expectExceptionMessage('Е-mail совпадает с текущим.');
+
+        $user->requestEmailChanging($newEmailToken, $newDate, $newEmail);
+    }
+
+    public function testExceptionWhenRequestingChangeEmailIfTokenHasNotExpired(): void
+    {
+        $hashGenerator = new PasswordHashGenerator(16);
+        $tokenGenerator = new TokenGenerator(new \DateInterval('PT1H'));
+        $token = $tokenGenerator->generate(new DateTimeImmutable('+1 day'));
+
+        $user = User::requestJoinByEmail(
+            Id::generate(),
+            new DateTimeImmutable(),
+            new Email('test@mail.ru'),
+            $hashGenerator->hash('pass'),
+            $token
+        );
+
+        $user->confirmJoin($token->value(), new DateTimeImmutable());
+
+        $newDate = new DateTimeImmutable();
+        $newEmailToken = $tokenGenerator->generate($newDate->modify('+1 day'));
+        $newEmail = new Email('new-email@mail.ru');
+        $user->requestEmailChanging($newEmailToken, $newDate, $newEmail);
+
+        $this->expectException(\DomainException::class);
+        $this->expectExceptionMessage('Изменение E-mail уже запрошено.');
+
+        $newDate = new DateTimeImmutable();
+        $newEmailToken = $tokenGenerator->generate($newDate);
+        $newEmail = new Email('new-email2@mail.ru');
+        $user->requestEmailChanging($newEmailToken, $newDate, $newEmail);
+    }
 }
