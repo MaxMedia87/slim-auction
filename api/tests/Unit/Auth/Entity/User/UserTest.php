@@ -7,6 +7,7 @@ namespace Test\Unit\Auth\Entity\User;
 use App\Auth\Entity\User\Email;
 use App\Auth\Entity\User\Id;
 use App\Auth\Entity\User\NetworkIdentity;
+use App\Auth\Entity\User\Role;
 use App\Auth\Entity\User\Status;
 use App\Auth\Entity\User\Token;
 use App\Auth\Entity\User\User;
@@ -88,6 +89,7 @@ class UserTest extends TestCase
         self::assertEquals($email->value(), $user->email()->value());
         self::assertTrue($user->isWait());
         self::assertFalse($user->isActive());
+        self::assertEquals(Role::USER, $user->role()->name());
     }
 
     /**
@@ -130,6 +132,7 @@ class UserTest extends TestCase
         self::assertFalse($user->isWait());
         self::assertTrue($user->isActive());
         self::assertCount(1, $user->networks());
+        self::assertEquals(Role::USER, $user->role()->name());
     }
 
     /**
@@ -611,5 +614,28 @@ class UserTest extends TestCase
         $this->expectExceptionMessage('Не отправлен запрос на смену Email.');
 
         $user->confirmEmailChanging($newEmailToken->value(), new DateTimeImmutable());
+    }
+
+    public function testChangeRole(): void
+    {
+        $hashGenerator = new PasswordHashGenerator(16);
+        $tokenGenerator = new TokenGenerator(new \DateInterval('PT1H'));
+        $token = $tokenGenerator->generate(new DateTimeImmutable('+1 day'));
+
+        $user = User::requestJoinByEmail(
+            Id::generate(),
+            new DateTimeImmutable(),
+            new Email('test@mail.ru'),
+            $hashGenerator->hash('pass'),
+            $token
+        );
+
+        $user->confirmJoin($token->value(), new DateTimeImmutable());
+
+        self::assertEquals(Role::USER, $user->role()->name());
+
+        $user->changeRole(new Role(Role::ADMIN));
+
+        self::assertEquals(Role::ADMIN, $user->role()->name());
     }
 }
