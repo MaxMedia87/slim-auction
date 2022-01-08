@@ -638,4 +638,46 @@ class UserTest extends TestCase
 
         self::assertEquals(Role::ADMIN, $user->role()->name());
     }
+
+    /**
+     * @doesNotPerformAssertions
+     */
+    public function testRemove(): void
+    {
+        $hashGenerator = new PasswordHashGenerator(16);
+        $tokenGenerator = new TokenGenerator(new \DateInterval('PT1H'));
+        $token = $tokenGenerator->generate(new DateTimeImmutable('+1 day'));
+
+        $user = User::requestJoinByEmail(
+            Id::generate(),
+            new DateTimeImmutable(),
+            new Email('test@mail.ru'),
+            $hashGenerator->hash('pass'),
+            $token
+        );
+
+        $user->remove();
+    }
+
+    public function testExceptionWhenDeletingActiveUser(): void
+    {
+        $hashGenerator = new PasswordHashGenerator(16);
+        $tokenGenerator = new TokenGenerator(new \DateInterval('PT1H'));
+        $token = $tokenGenerator->generate(new DateTimeImmutable('+1 day'));
+
+        $user = User::requestJoinByEmail(
+            Id::generate(),
+            new DateTimeImmutable(),
+            new Email('test@mail.ru'),
+            $hashGenerator->hash('pass'),
+            $token
+        );
+
+        $user->confirmJoin($token->value(), new DateTimeImmutable());
+
+        $this->expectException(\DomainException::class);
+        $this->expectExceptionMessage('Нельзя удалить активного пользователя.');
+
+        $user->remove();
+    }
 }

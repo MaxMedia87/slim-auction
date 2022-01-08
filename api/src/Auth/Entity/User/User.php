@@ -159,6 +159,15 @@ class User
         $this->role = $role;
     }
 
+    public function remove(): void
+    {
+        //TODO: В последующем добавить команду по удалению/деактивации пользователя. см. урок 19.
+
+        if (false === $this->isWait()) {
+            throw new \DomainException('Нельзя удалить активного пользователя.');
+        }
+    }
+
     public function isWait(): bool
     {
         return $this->status->isWait();
