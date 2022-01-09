@@ -10,18 +10,21 @@
   ],
   "config": {
     "process-timeout": 0,
-    "sort-packages": true
+    "sort-packages": true,
+    "allow-plugins": {
+      "composer/package-versions-deprecated": true
+    }
   },
   "require": {
     "php": "^7.4",
     "ext-json": "*",
+    "doctrine/orm": "2.7",
     "php-di/php-di": "^6.0",
     "ramsey/uuid": "^4.2",
     "slim/psr7": "^1.0",
     "slim/slim": "^4.9",
     "symfony/console": "^5.3",
-    "webmozart/assert": "^1.10",
-    "ext-http": "*"
+    "webmozart/assert": "^1.10"
   },
   "require-dev": {
     "overtrue/phplint": "^2.0",
