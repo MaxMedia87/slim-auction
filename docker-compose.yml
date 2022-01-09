@@ -39,3 +39,17 @@ services:
       context: api/docker/develop/php-cli
     volumes:
     - ./api:/app
+
+  api-postgres:
+    image: postgres:12.2-alpine
+    environment:
+      POSTGRES_USER: app
+      POSTGRES_PASSWORD: secret
+      POSTGRES_DB: auction
+    volumes:
+      - api-postgres:/var/lib/postgresql/data
+    ports:
+      - "54321:5432"
+
+volumes:
+  api-postgres:
